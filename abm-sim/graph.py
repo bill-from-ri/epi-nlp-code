@@ -2,23 +2,28 @@
 # Defines the contact graph used as the base for the simulation.
 
 from collections import defaultdict
+
 from entities import HealthState, Person
-from disease import Disease
+from disease import Disease as d
+from utils import compute_success
 
 class EpiGraph:
 
-    def __iter__(self, people: list[Person]):
+    def __init__(self, people: list[Person]):
 
         self.graph  = defaultdict(list)
         self.people = {p.id: p for p in people}
 
     def create_edge(self, fst, snd):
-        self.graph[fst.id].append(snd)
-        self.graph[snd.id].append(fst)
+        if snd.id not in self.graph[fst.id]:
+            self.graph[fst.id].append(snd.id)
+        if fst.id not in self.graph[snd.id]:
+            self.graph[snd.id].append(fst.id)
 
     def step(self):
         """
         TODO: Compute behavior changes and hospitalization.
+        TODO: Move transition logic into disease.py.
         For every infected person, find each of their susceptible contacts.
             Compute exposure likelihood along that edge.
             Mark people for exposure.
@@ -47,21 +52,36 @@ class EpiGraph:
             match person.health_state:
                 case HealthState.INFECTED:
                     for contact_id in self.graph[person.id]:
+
                         contact = self.people[contact_id]
                         # TODO: Add likelihood calculation.
-                        marked_for_exposure.add(contact_id)
+                        if compute_success(d.beta):
+                            marked_for_exposure.add(contact_id)
+
+                    # TODO: Add likelihood calculation.
+                    might_recover = compute_success(d.gamma)
+                    might_worsen  = compute_success(d.delta)
+                    if might_recover:
+                        marked_for_recovered.add(person.id)
+                    elif might_worsen:
+                        marked_for_dire.add(person.id)
+
                 case HealthState.EXPOSED:
-                    # TODO: Add likelihood calculation.
-                    marked_for_infection.add(person.id)
-                case HealthState.INFECTED:
-                    # TODO: Add likelihood calculation.
-                    marked_for_recovered.add(person.id)
+                    if compute_success(d.sigma):
+                        marked_for_infection.add(person.id)
+
                 case HealthState.DIRE:
-                    # TODO: Add likelihood calculation.
-                    marked_for_dead.add(person.id)
+
+                    might_recover = compute_success(d.zeta)
+                    might_worsen  = compute_success(d.eta)
+                    if might_recover:
+                        marked_for_recovered.add(person.id)
+                    elif might_worsen:
+                        marked_for_dead.add(person.id)
+
                 case HealthState.RECOVERED:
-                    # TODO: Add likelihood calculation.
-                    marked_for_susceptible.add(person.id)
+                    if compute_success(d.omega):
+                        marked_for_susceptible.add(person.id)
 
         for pid in list(marked_for_exposure):
             self.people[pid].health_state = HealthState.EXPOSED
