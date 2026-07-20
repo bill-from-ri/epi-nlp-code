@@ -218,3 +218,35 @@ __marimo__/
 .streamlit/secrets.toml
 
 *.DS_Store
+
+# ---------------------------------------------------------------------------
+# Frontend (abm-sim/web)
+# ---------------------------------------------------------------------------
+
+# Dependencies. Restored with `npm install` from the committed package-lock.json,
+# which is why the lockfile itself stays tracked.
+node_modules/
+
+# Vite build output. Committed source builds it; server.py serves it when
+# present. The `dist/` rule in the Python section above already catches this,
+# but that is a coincidence of an unanchored pattern rather than intent.
+abm-sim/web/dist/
+
+# Build caches and tool state
+.vite/
+*.tsbuildinfo
+.eslintcache
+
+# Package manager logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# The Python packaging rules near the top of this file are unanchored, so
+# `lib/`, `build/` and `dist/` match at *any* depth. `src/lib/` is a common
+# frontend convention and would be silently untracked with no error - the worst
+# kind of gitignore bug. Exempt those paths under the web source tree.
+!abm-sim/web/src/lib/
+!abm-sim/web/src/build/
+!abm-sim/web/src/dist/

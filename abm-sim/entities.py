@@ -2,7 +2,6 @@
 # Defines classes HealthState, OfficeType, Person, Household, Office, Population.
 
 from enum import Enum
-from itertools import count
 from collections import defaultdict
 
 class HealthState(Enum):
@@ -21,19 +20,30 @@ class OfficeType(Enum):
     SOCIAL    = 4
     DESK      = 5
 
+# Identity is assigned by whoever builds the population (see population.generate_town)
+# rather than by a class-level itertools.count. Global counters never reset, so in a
+# long-lived server process holding several concurrent runs they would both climb
+# without bound and interleave between sessions. Per-population ids are contiguous
+# from zero, which also lets the client index straight into arrays.
+
 class Person:
 
-    _counter = count(0)
+    __slots__ = (
+        'id', 'health_state', 'is_quarantining', 'is_masking', 'is_testing',
+        'is_vaccinated', 'age', 'is_obese', 'is_smoker', 'is_asthmatic',
+        'household_id', 'office_id', 'hospital_id',
+    )
 
     def __init__(
             self,
+            id,
             health=HealthState.SUSCEPTIBLE,
             household_id=None,
             office_id=None,
             **kwargs
         ):
 
-        self.id = next(Person._counter)
+        self.id = id
         self.health_state = health
 
         self.is_quarantining = False
@@ -61,21 +71,21 @@ class Person:
 
 class Household:
 
-    _counter = count(0)
+    __slots__ = ('id', 'wealth', 'has_car')
 
-    def __init__(self, wealth=1.0, has_car=True):
+    def __init__(self, id, wealth=1.0, has_car=True):
 
-        self.id      = next(Household._counter)
+        self.id      = id
         self.wealth  = wealth
         self.has_car = has_car
 
 class Office:
 
-    _counter = count(0)
+    __slots__ = ('id', 'office_type', 'capacity')
 
-    def __init__(self, office_type, hospital_capacity=0):
+    def __init__(self, id, office_type, hospital_capacity=0):
 
-        self.id          = next(Office._counter)
+        self.id          = id
         self.office_type = office_type
         self.capacity    = hospital_capacity if office_type == OfficeType.HOSPITAL else 0
 
